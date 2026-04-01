@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import Navbar from "@/components/Navbar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -23,8 +24,8 @@ export default function RootLayout({
       className={`${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full font-sans bg-gray-50 text-foreground flex flex-col">
-        {/* 데스크톱/태블릿/모바일에 모두 대응하는 유연한 레이아웃 */}
         <div className="w-full min-h-screen flex flex-col">
+          <Navbar />
           {children}
         </div>
       </body>
