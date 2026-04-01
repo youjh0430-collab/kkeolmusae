@@ -1,0 +1,53 @@
+<h2>껄무새 — 유저 플로우</h2>
+<p class="subtitle">비로그인 / 로그인 두 가지 경로</p>
+
+<div style="margin-top: 1.5rem; display: flex; gap: 1.5rem;">
+
+  <!-- 비로그인 플로우 -->
+  <div style="flex: 1; background: #1a1a1a; border-radius: 12px; padding: 1.2rem; border: 1px solid #444;">
+    <div class="label" style="color: #aaa; margin-bottom: 1rem">👤 비로그인 사용자</div>
+    <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.88rem;">
+      <div style="background:#2a2a2a; border-radius:8px; padding:0.6rem 1rem; border-left: 3px solid #555;">🏠 랜딩 페이지</div>
+      <div style="text-align:center; color:#555; font-size:0.8rem">↓</div>
+      <div style="background:#2a2a2a; border-radius:8px; padding:0.6rem 1rem; border-left: 3px solid #7c83ff;">🧮 시뮬레이션 입력<br><small style="color:#888">항목 + 금액 + 기간 + 주식</small></div>
+      <div style="text-align:center; color:#555; font-size:0.8rem">↓</div>
+      <div style="background:#2a2a2a; border-radius:8px; padding:0.6rem 1rem; border-left: 3px solid #6bde6b;">📊 결과 화면<br><small style="color:#888">수익률 + 껄무새 한마디 + TTS</small></div>
+      <div style="text-align:center; color:#555; font-size:0.8rem">↓</div>
+      <div style="background:#3a2a1a; border-radius:8px; padding:0.6rem 1rem; border-left: 3px solid #f0a030;">🔒 한 번 더 하려면 로그인 유도<br><small style="color:#888">결과 하단에 소프트 CTA</small></div>
+      <div style="text-align:center; color:#555; font-size:0.8rem">↓ (선택)</div>
+      <div style="background:#2a2a2a; border-radius:8px; padding:0.6rem 1rem; border-left: 3px solid #de6b6b;">🔗 결과 공유 (이미지 카드)</div>
+    </div>
+  </div>
+
+  <!-- 로그인 플로우 -->
+  <div style="flex: 1; background: #1a1a2e; border-radius: 12px; padding: 1.2rem; border: 1px solid #3b3b6b;">
+    <div class="label" style="color: #7c83ff; margin-bottom: 1rem">✅ 로그인 사용자</div>
+    <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.88rem;">
+      <div style="background:#2a2a4a; border-radius:8px; padding:0.6rem 1rem; border-left: 3px solid #7c83ff;">🏠 랜딩 or 대시보드<br><small style="color:#888">최근 시뮬레이션 + 랭킹 미리보기</small></div>
+      <div style="text-align:center; color:#555; font-size:0.8rem">↓</div>
+      <div style="background:#2a2a4a; border-radius:8px; padding:0.6rem 1rem; border-left: 3px solid #7c83ff;">🧮 시뮬레이션 입력 (무제한)</div>
+      <div style="text-align:center; color:#555; font-size:0.8rem">↓</div>
+      <div style="background:#2a2a4a; border-radius:8px; padding:0.6rem 1rem; border-left: 3px solid #6bde6b;">📊 결과 화면<br><small style="color:#888">수익률 + 차트 + 껄무새 한마디 + TTS</small></div>
+      <div style="text-align:center; color:#555; font-size:0.8rem">↓ 자동 저장</div>
+      <div style="background:#2a2a4a; border-radius:8px; padding:0.6rem 1rem; border-left: 3px solid #6bbfde;">📁 히스토리에 저장됨</div>
+      <div style="text-align:center; color:#555; font-size:0.8rem">↓ (선택)</div>
+      <div style="background:#2a2a4a; border-radius:8px; padding:0.6rem 1rem; border-left: 3px solid #de6b6b;">🔗 결과 공유 (이미지 카드)</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 페이지 목록 -->
+<div style="margin-top: 1.5rem; background: #1a1a1a; border-radius: 12px; padding: 1.2rem; border: 1px solid #444;">
+  <div class="label" style="margin-bottom: 0.8rem">📄 페이지 구성</div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; font-size: 0.88rem;">
+    <div style="background:#2a2a2a; border-radius:6px; padding:0.5rem 0.8rem"><span style="color:#7c83ff">/</span> — 랜딩 페이지</div>
+    <div style="background:#2a2a2a; border-radius:6px; padding:0.5rem 0.8rem"><span style="color:#7c83ff">/simulate</span> — 시뮬레이션 입력</div>
+    <div style="background:#2a2a2a; border-radius:6px; padding:0.5rem 0.8rem"><span style="color:#7c83ff">/result/[id]</span> — 결과 화면</div>
+    <div style="background:#2a2a2a; border-radius:6px; padding:0.5rem 0.8rem"><span style="color:#7c83ff">/history</span> — 내 시뮬레이션 기록</div>
+    <div style="background:#2a2a2a; border-radius:6px; padding:0.5rem 0.8rem"><span style="color:#7c83ff">/ranking</span> — 후회 랭킹</div>
+    <div style="background:#2a2a2a; border-radius:6px; padding:0.5rem 0.8rem"><span style="color:#7c83ff">/share/[id]</span> — 공유 카드 OG</div>
+  </div>
+</div>
+
+<p style="margin-top: 1.5rem; color: #888; font-size: 0.9rem; text-align: center">플로우 괜찮으면 터미널에서 알려주세요!</p>

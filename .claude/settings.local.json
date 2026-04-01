@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash /Users/gina-i/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.6/scripts/start-server.sh --project-dir \"/Users/gina-i/Desktop/PM-AI lab/동아리 과제/04. 금융\")",
+      "Bash(bash \"/Users/gina-i/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.6/skills/brainstorming/scripts/start-server.sh\" --project-dir \"/Users/gina-i/Desktop/PM-AI lab/동아리 과제/04. 금융\")",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --app --no-src-dir --import-alias \"@/*\" --eslint --yes)",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --app --no-src-dir --import-alias \"@/*\" --eslint --yes --name \"ggulmusae\")",
+      "Bash(npx:*)",
+      "Bash(rsync:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)"
+    ]
+  }
+}

@@ -1,0 +1,66 @@
+<h2>껄무새 — 전체 아키텍처</h2>
+<p class="subtitle">Next.js + Supabase + Vercel 스택 설계</p>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem;">
+
+  <div style="background: #1a1a2e; border-radius: 12px; padding: 1.2rem; border: 1px solid #3b3b6b;">
+    <div class="label" style="color: #7c83ff; margin-bottom: 0.8rem">🖥️ FRONTEND — Vercel</div>
+    <div style="font-size: 0.9rem; line-height: 2;">
+      <div style="background:#2a2a4a; border-radius:6px; padding:0.4rem 0.8rem; margin-bottom:0.4rem">Next.js 14 (App Router)</div>
+      <div style="background:#2a2a4a; border-radius:6px; padding:0.4rem 0.8rem; margin-bottom:0.4rem">TailwindCSS + 귀여운 UI</div>
+      <div style="background:#2a2a4a; border-radius:6px; padding:0.4rem 0.8rem; margin-bottom:0.4rem">Web Speech API (TTS)</div>
+      <div style="background:#2a2a4a; border-radius:6px; padding:0.4rem 0.8rem">Recharts (수익률 차트)</div>
+    </div>
+  </div>
+
+  <div style="background: #1a2e1a; border-radius: 12px; padding: 1.2rem; border: 1px solid #3b6b3b;">
+    <div class="label" style="color: #6bde6b; margin-bottom: 0.8rem">🗄️ BACKEND — Supabase</div>
+    <div style="font-size: 0.9rem; line-height: 2;">
+      <div style="background:#2a4a2a; border-radius:6px; padding:0.4rem 0.8rem; margin-bottom:0.4rem">PostgreSQL DB</div>
+      <div style="background:#2a4a2a; border-radius:6px; padding:0.4rem 0.8rem; margin-bottom:0.4rem">Auth (Google + Kakao)</div>
+      <div style="background:#2a4a2a; border-radius:6px; padding:0.4rem 0.8rem; margin-bottom:0.4rem">Row Level Security</div>
+      <div style="background:#2a4a2a; border-radius:6px; padding:0.4rem 0.8rem">Storage (공유 카드 이미지)</div>
+    </div>
+  </div>
+
+  <div style="background: #2e1a1a; border-radius: 12px; padding: 1.2rem; border: 1px solid #6b3b3b;">
+    <div class="label" style="color: #de6b6b; margin-bottom: 0.8rem">📈 STOCK API — Yahoo Finance</div>
+    <div style="font-size: 0.9rem; line-height: 2;">
+      <div style="background:#4a2a2a; border-radius:6px; padding:0.4rem 0.8rem; margin-bottom:0.4rem">yahoo-finance2 (npm)</div>
+      <div style="background:#4a2a2a; border-radius:6px; padding:0.4rem 0.8rem; margin-bottom:0.4rem">국내 주식 (005930.KS 등)</div>
+      <div style="background:#4a2a2a; border-radius:6px; padding:0.4rem 0.8rem; margin-bottom:0.4rem">해외 주식 (AAPL, TSLA 등)</div>
+      <div style="background:#4a2a2a; border-radius:6px; padding:0.4rem 0.8rem">Next.js API Route에서 호출</div>
+    </div>
+  </div>
+
+  <div style="background: #1a2a2e; border-radius: 12px; padding: 1.2rem; border: 1px solid #3b5b6b;">
+    <div class="label" style="color: #6bbfde; margin-bottom: 0.8rem">🐦 핵심 기능</div>
+    <div style="font-size: 0.9rem; line-height: 2;">
+      <div style="background:#2a3a4a; border-radius:6px; padding:0.4rem 0.8rem; margin-bottom:0.4rem">시뮬레이션 (비로그인 1회 / 로그인 무제한)</div>
+      <div style="background:#2a3a4a; border-radius:6px; padding:0.4rem 0.8rem; margin-bottom:0.4rem">껄무새 AI 코멘트 + TTS</div>
+      <div style="background:#2a3a4a; border-radius:6px; padding:0.4rem 0.8rem; margin-bottom:0.4rem">결과 공유 카드</div>
+      <div style="background:#2a3a4a; border-radius:6px; padding:0.4rem 0.8rem">후회 랭킹 / 히스토리</div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top: 1.5rem; background: #1a1a1a; border-radius: 12px; padding: 1.2rem; border: 1px solid #444;">
+  <div class="label" style="margin-bottom: 0.8rem">🗃️ DB 테이블 구조</div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; font-size: 0.82rem;">
+    <div>
+      <div style="color: #7c83ff; margin-bottom: 0.4rem; font-weight: bold">simulations</div>
+      <div style="color: #aaa; line-height: 1.8">id<br>user_id (nullable)<br>item_name<br>item_price<br>period_start<br>period_end<br>stock_ticker<br>stock_name<br>return_rate<br>profit_amount<br>created_at</div>
+    </div>
+    <div>
+      <div style="color: #6bde6b; margin-bottom: 0.4rem; font-weight: bold">popular_items</div>
+      <div style="color: #aaa; line-height: 1.8">id<br>name<br>price<br>emoji<br>category<br>usage_count</div>
+    </div>
+    <div>
+      <div style="color: #de6b6b; margin-bottom: 0.4rem; font-weight: bold">popular_stocks</div>
+      <div style="color: #aaa; line-height: 1.8">id<br>ticker<br>name_ko<br>market (KR/US)<br>simulation_count<br>avg_return_rate</div>
+    </div>
+  </div>
+</div>
+
+<p style="margin-top: 1.5rem; color: #888; font-size: 0.9rem; text-align: center">이 구조로 괜찮으면 터미널에서 알려주세요!</p>
