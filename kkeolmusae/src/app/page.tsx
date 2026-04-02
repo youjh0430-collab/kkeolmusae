@@ -21,7 +21,8 @@ import {
   TrendingUp,
   TrendingDown,
   ChevronRight,
-  Bird
+  Bird,
+  ArrowLeft
 } from 'lucide-react';
 import { 
   LineChart, 
@@ -118,12 +119,11 @@ const ParrotMascot = ({ state }: { state: 'idle' | 'happy' | 'sad' | 'thinking' 
   return (
     <motion.div 
       className="relative w-32 h-32 mx-auto mb-6"
-      animate={{ y: [0, -10, 0] }}
-      transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+      animate={state === 'thinking' ? { y: [-5, 5, -5] } : { y: [0, -10, 0] }}
+      transition={{ duration: state === 'thinking' ? 1 : 3, repeat: Infinity, ease: "easeInOut" }}
     >
       <div className="absolute inset-0 bg-brand-primary/10 rounded-full blur-2xl" />
       <div className="relative z-10 w-full h-full flex items-center justify-center">
-        {/* Simple SVG Parrot Mascot */}
         <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-lg">
           <motion.circle 
             cx="50" cy="50" r="45" 
@@ -131,7 +131,6 @@ const ParrotMascot = ({ state }: { state: 'idle' | 'happy' | 'sad' | 'thinking' 
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
           />
-          {/* Eyes */}
           <circle cx="35" cy="40" r="5" fill="white" />
           <circle cx="65" cy="40" r="5" fill="white" />
           <motion.circle 
@@ -142,11 +141,7 @@ const ParrotMascot = ({ state }: { state: 'idle' | 'happy' | 'sad' | 'thinking' 
             cx="65" cy="40" r="2.5" fill="black" 
             animate={state === 'happy' ? { scale: [1, 1.5, 1] } : {}}
           />
-          
-          {/* Beak */}
           <path d="M45 55 L55 55 L50 75 Z" fill="#FFB347" />
-          
-          {/* Expressions */}
           {state === 'sad' && (
             <path d="M35 30 Q50 20 65 30" stroke="white" strokeWidth="2" fill="none" />
           )}
@@ -160,7 +155,6 @@ const ParrotMascot = ({ state }: { state: 'idle' | 'happy' | 'sad' | 'thinking' 
         </svg>
       </div>
       
-      {/* Speech Bubble */}
       <motion.div 
         className="absolute -top-4 -right-12 bg-white px-4 py-2 rounded-2xl shadow-md border border-slate-100 text-sm font-bold whitespace-nowrap"
         initial={{ opacity: 0, scale: 0.8 }}
@@ -183,7 +177,6 @@ const CountUp = ({ end, prefix = '', suffix = '' }: { end: number, prefix?: stri
     const duration = 1500;
     const increment = end / (duration / 16);
     
-    // Prevent infinite loop or NaN if end is 0
     if (end === 0) {
       setCount(0);
       return;
@@ -229,7 +222,6 @@ export default function App() {
   
   const [stockSearchQuery, setStockSearchQuery] = useState('');
 
-  // Use NEXT_PUBLIC for Next.js environment vars in client component
   // API 키가 없어도 화면이 터지지 않도록 예외 처리
   const ai = useMemo(() => {
     try {
@@ -243,11 +235,30 @@ export default function App() {
 
   const handleStart = () => setCurrentStep('item');
 
-  const handleSelectItem = (item: ConsumptionItem) => {
-    setSelectedItem(item);
-    setCurrentStep('period');
+  // Next / Prev Logic
+  const handlePrev = () => {
+    if (currentStep === 'item') setCurrentStep('landing');
+    if (currentStep === 'period') setCurrentStep('item');
+    if (currentStep === 'frequency') setCurrentStep('period');
+    if (currentStep === 'stock') setCurrentStep('frequency');
   };
 
+  const handleNext = () => {
+    if (currentStep === 'item' && selectedItem) setCurrentStep('period');
+    if (currentStep === 'period' && selectedPeriod) setCurrentStep('frequency');
+    if (currentStep === 'frequency' && selectedFrequency !== null) setCurrentStep('stock');
+    if (currentStep === 'stock' && selectedStock) executeSimulation();
+  };
+
+  const checkCanGoNext = () => {
+    if (currentStep === 'item') return !!selectedItem;
+    if (currentStep === 'period') return !!selectedPeriod;
+    if (currentStep === 'frequency') return selectedFrequency !== null;
+    if (currentStep === 'stock') return !!selectedStock;
+    return true;
+  };
+
+  // Select Item Logic
   const handleCustomItemSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!customItemName || !customItemPrice) return;
@@ -255,17 +266,14 @@ export default function App() {
     const price = parseInt(customItemPrice.replace(/[^0-9]/g, ''));
     if (isNaN(price)) return;
 
-    handleSelectItem({
+    setSelectedItem({
       id: 'custom',
       name: customItemName,
       price: price,
       icon: <Bird className="w-6 h-6" />
     });
-  };
-
-  const handleSelectPeriod = (period: Period) => {
-    setSelectedPeriod(period);
-    setCurrentStep('frequency');
+    setIsCustomItemMode(false);
+    setCurrentStep('period'); // Auto-advance for custom input submission feels natural
   };
 
   const handleCustomPeriodSubmit = (e: React.FormEvent) => {
@@ -273,16 +281,13 @@ export default function App() {
     const days = parseInt(customPeriodDays);
     if (isNaN(days) || days <= 0) return;
 
-    handleSelectPeriod({
+    setSelectedPeriod({
       id: 'custom',
       label: `${days}일 동안`,
       days: days
     });
-  };
-
-  const handleSelectFrequency = (frequency: number) => {
-    setSelectedFrequency(frequency);
-    setCurrentStep('stock');
+    setIsCustomPeriodMode(false);
+    setCurrentStep('frequency');
   };
 
   const handleCustomFrequencySubmit = (e: React.FormEvent) => {
@@ -290,20 +295,18 @@ export default function App() {
     const freq = parseInt(customFrequency);
     if (isNaN(freq) || freq <= 0) return;
 
-    handleSelectFrequency(freq);
+    setSelectedFrequency(freq);
+    setIsCustomFrequencyMode(false);
+    setCurrentStep('stock');
   };
 
-  const handleSelectStock = async (stock: Stock) => {
-    setSelectedStock(stock);
+  const executeSimulation = async () => {
     setIsCalculating(true);
     setCurrentStep('result');
     
-    // Calculate total invested amount
-    const isDaily = selectedFrequency === -1;
-    const totalTimes = isDaily ? selectedPeriod!.days : selectedFrequency!;
+    const totalTimes = selectedFrequency === -1 ? selectedPeriod!.days : selectedFrequency!;
     const totalInvested = selectedItem!.price * totalTimes;
 
-    // Simulate calculation
     const mockProfitRate = (Math.random() * 200) - 50; 
     const currentValue = totalInvested * (1 + mockProfitRate / 100);
     const regretAmount = currentValue - totalInvested;
@@ -311,7 +314,7 @@ export default function App() {
     try {
       const prompt = `
         주식 투자 시뮬레이션 결과에 대해 앵무새 캐릭터 '껄무새'가 할 법한 위트 있고 장난스러운 코멘트를 한 문장으로 작성해줘.
-        - 상황: ${selectedPeriod?.label} ${totalTimes}번 소비한 ${selectedItem?.name} (총 ${totalInvested.toLocaleString()}원) 대신 ${stock.name} 주식을 샀더라면?
+        - 상황: ${selectedPeriod?.label} ${totalTimes}번 소비한 ${selectedItem?.name} (총 ${totalInvested.toLocaleString()}원) 대신 ${selectedStock!.name} 주식을 샀더라면?
         - 수익률: ${mockProfitRate.toFixed(1)}%
         - 현재 가치: ${currentValue.toLocaleString()}원
         - 말투: ~껄, ~껄껄 하는 앵무새 말투, 장난스러움, 팩트 폭격.
@@ -332,7 +335,7 @@ export default function App() {
         period: selectedPeriod!,
         frequency: totalTimes,
         totalInvested: totalInvested,
-        stock: stock,
+        stock: selectedStock!,
         profitRate: mockProfitRate,
         currentValue: currentValue,
         regretAmount: regretAmount,
@@ -345,7 +348,7 @@ export default function App() {
         period: selectedPeriod!,
         frequency: totalTimes,
         totalInvested: totalInvested,
-        stock: stock,
+        stock: selectedStock!,
         profitRate: mockProfitRate,
         currentValue: currentValue,
         regretAmount: regretAmount,
@@ -419,7 +422,7 @@ export default function App() {
   );
 
   const renderItemStep = () => (
-    <div className="px-6 py-12">
+    <div className="px-6 py-12 pb-32">
       <h2 className="text-2xl font-bold mb-8">무엇을 소비하셨나요?</h2>
       
       <AnimatePresence mode="wait">
@@ -431,30 +434,58 @@ export default function App() {
             exit={{ opacity: 0, y: -10 }}
             className="grid grid-cols-1 gap-4"
           >
-            {CONSUMPTION_ITEMS.map((item) => (
+            {CONSUMPTION_ITEMS.map((item) => {
+              const isSelected = selectedItem?.id === item.id;
+              return (
+                <motion.button
+                  key={item.id}
+                  onClick={() => setSelectedItem(item)}
+                  className={cn(
+                    "flex items-center gap-4 p-6 rounded-2xl border transition-all text-left",
+                    isSelected 
+                      ? "bg-brand-primary/5 border-brand-primary shadow-sm ring-2 ring-brand-primary/20" 
+                      : "bg-white border-slate-100 shadow-sm hover:border-brand-primary/50"
+                  )}
+                  whileHover={{ x: 5 }}
+                >
+                  <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center", isSelected ? "bg-brand-primary/20 text-brand-primary" : "bg-brand-primary/5 text-brand-primary")}>
+                    {item.icon}
+                  </div>
+                  <div className="flex-1">
+                    <div className="font-bold text-lg">{item.name}</div>
+                    <div className="text-slate-400 text-sm">{item.price.toLocaleString()}원</div>
+                  </div>
+                  <ChevronRight className={isSelected ? "text-brand-primary" : "text-slate-300"} />
+                </motion.button>
+              );
+            })}
+            
+            {/* Show custom item if it was selected and mode is closed */}
+            {selectedItem?.id === 'custom' && (
               <motion.button
-                key={item.id}
-                onClick={() => handleSelectItem(item)}
-                className="flex items-center gap-4 p-6 bg-white rounded-2xl border border-slate-100 shadow-sm hover:border-brand-primary transition-colors text-left"
-                whileHover={{ x: 5 }}
+                key="custom"
+                onClick={() => setIsCustomItemMode(true)}
+                className="flex items-center gap-4 p-6 rounded-2xl border transition-all text-left bg-brand-primary/5 border-brand-primary shadow-sm ring-2 ring-brand-primary/20"
               >
-                <div className="w-12 h-12 bg-brand-primary/10 rounded-xl flex items-center justify-center text-brand-primary">
-                  {item.icon}
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-brand-primary/20 text-brand-primary">
+                  {selectedItem.icon}
                 </div>
                 <div className="flex-1">
-                  <div className="font-bold text-lg">{item.name}</div>
-                  <div className="text-slate-400 text-sm">{item.price.toLocaleString()}원</div>
+                  <div className="font-bold text-lg">{selectedItem.name}</div>
+                  <div className="text-slate-400 text-sm">{selectedItem.price.toLocaleString()}원</div>
                 </div>
-                <ChevronRight className="text-slate-300" />
+                <ChevronRight className="text-brand-primary" />
               </motion.button>
-            ))}
+            )}
             
-            <button 
-              onClick={() => setIsCustomItemMode(true)}
-              className="flex items-center justify-center gap-2 p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-slate-500 font-bold hover:bg-slate-100 transition-colors"
-            >
-              직접 입력하기
-            </button>
+            {selectedItem?.id !== 'custom' && (
+              <button 
+                onClick={() => setIsCustomItemMode(true)}
+                className="flex items-center justify-center gap-2 p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-slate-500 font-bold hover:bg-slate-100 transition-colors"
+              >
+                직접 입력하기
+              </button>
+            )}
           </motion.div>
         ) : (
           <motion.form 
@@ -509,7 +540,7 @@ export default function App() {
   );
 
   const renderPeriodStep = () => (
-    <div className="px-6 py-12">
+    <div className="px-6 py-12 pb-32">
       <h2 className="text-2xl font-bold mb-2">얼마나 오랫동안 소비했나요?</h2>
       <p className="text-slate-400 mb-8 text-sm">소비를 반복한 기간을 선택해주세요.</p>
       
@@ -522,23 +553,46 @@ export default function App() {
             exit={{ opacity: 0, y: -10 }}
             className="grid grid-cols-2 gap-4"
           >
-            {PERIODS.map((period) => (
+            {PERIODS.map((period) => {
+              const isSelected = selectedPeriod?.id === period.id;
+              return (
+                <motion.button
+                  key={period.id}
+                  onClick={() => setSelectedPeriod(period)}
+                  className={cn(
+                    "p-6 rounded-2xl border transition-all flex flex-col items-center gap-2",
+                    isSelected 
+                      ? "bg-brand-primary/5 border-brand-primary shadow-sm ring-2 ring-brand-primary/20" 
+                      : "bg-white border-slate-100 shadow-sm hover:border-brand-primary/50"
+                  )}
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <div className={cn("text-lg font-bold", isSelected ? "text-brand-primary" : "")}>{period.label}</div>
+                  <div className="text-xs text-slate-400">약 {period.days}일</div>
+                </motion.button>
+              );
+            })}
+            
+            {/* Show custom period if selected */}
+            {selectedPeriod?.id === 'custom' && (
               <motion.button
-                key={period.id}
-                onClick={() => handleSelectPeriod(period)}
-                className="p-6 bg-white rounded-2xl border border-slate-100 shadow-sm hover:border-brand-primary transition-colors flex flex-col items-center gap-2"
-                whileHover={{ scale: 1.05 }}
+                key="custom"
+                onClick={() => setIsCustomPeriodMode(true)}
+                className="p-6 rounded-2xl border transition-all flex flex-col items-center gap-2 bg-brand-primary/5 border-brand-primary shadow-sm ring-2 ring-brand-primary/20 col-span-2"
               >
-                <div className="text-lg font-bold">{period.label}</div>
-                <div className="text-xs text-slate-400">약 {period.days}일</div>
+                <div className="text-lg font-bold text-brand-primary">{selectedPeriod.label}</div>
+                <div className="text-xs text-brand-primary/70">직접 입력됨</div>
               </motion.button>
-            ))}
-            <button 
-              onClick={() => setIsCustomPeriodMode(true)}
-              className="col-span-2 p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-slate-500 font-bold"
-            >
-              직접 입력 (일 단위)
-            </button>
+            )}
+            
+            {selectedPeriod?.id !== 'custom' && (
+              <button 
+                onClick={() => setIsCustomPeriodMode(true)}
+                className="col-span-2 p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-slate-500 font-bold"
+              >
+                직접 입력 (일 단위)
+              </button>
+            )}
           </motion.div>
         ) : (
           <motion.form 
@@ -583,7 +637,7 @@ export default function App() {
   );
 
   const renderFrequencyStep = () => (
-    <div className="px-6 py-12">
+    <div className="px-6 py-12 pb-32">
       <h2 className="text-2xl font-bold mb-2">얼마나 자주 소비했나요?</h2>
       <p className="text-slate-400 mb-8 text-sm">{selectedPeriod?.label} 총 몇 번 소비했나요?</p>
       
@@ -596,22 +650,44 @@ export default function App() {
             exit={{ opacity: 0, y: -10 }}
             className="grid grid-cols-3 gap-3"
           >
-            {FREQUENCIES.map((freq) => (
+            {FREQUENCIES.map((freq) => {
+              const isSelected = selectedFrequency === freq.value;
+              return (
+                <motion.button
+                  key={freq.id}
+                  onClick={() => setSelectedFrequency(freq.value)}
+                  className={cn(
+                    "p-4 rounded-2xl border transition-all flex flex-col items-center gap-1",
+                    isSelected 
+                      ? "bg-brand-primary/5 border-brand-primary shadow-sm ring-2 ring-brand-primary/20 text-brand-primary" 
+                      : "bg-white border-slate-100 shadow-sm hover:border-brand-primary/50"
+                  )}
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <div className="text-base font-bold">{freq.label}</div>
+                </motion.button>
+              );
+            })}
+            
+            {/* Show custom freq if selected and not in FREQUENCIES */}
+            {selectedFrequency !== null && !FREQUENCIES.some(f => f.value === selectedFrequency) && (
               <motion.button
-                key={freq.id}
-                onClick={() => handleSelectFrequency(freq.value)}
-                className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:border-brand-primary transition-colors flex flex-col items-center gap-1"
-                whileHover={{ scale: 1.05 }}
+                key="custom"
+                onClick={() => setIsCustomFrequencyMode(true)}
+                className="col-span-3 p-4 rounded-2xl border transition-all flex flex-col items-center gap-1 bg-brand-primary/5 border-brand-primary shadow-sm ring-2 ring-brand-primary/20 text-brand-primary"
               >
-                <div className="text-base font-bold">{freq.label}</div>
+                <div className="text-base font-bold">{selectedFrequency}번</div>
               </motion.button>
-            ))}
-            <button 
-              onClick={() => setIsCustomFrequencyMode(true)}
-              className="col-span-3 p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-slate-500 font-bold"
-            >
-              직접 입력 (회)
-            </button>
+            )}
+            
+            {(selectedFrequency === null || FREQUENCIES.some(f => f.value === selectedFrequency)) && (
+              <button 
+                onClick={() => setIsCustomFrequencyMode(true)}
+                className="col-span-3 p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-slate-500 font-bold"
+              >
+                직접 입력 (회)
+              </button>
+            )}
           </motion.div>
         ) : (
           <motion.form 
@@ -662,7 +738,7 @@ export default function App() {
     );
 
     return (
-      <div className="px-6 py-12">
+      <div className="px-6 py-12 pb-32">
         <h2 className="text-2xl font-bold mb-2">어떤 주식을 샀더라면?</h2>
         <p className="text-slate-400 mb-8 text-sm">종목을 검색하거나 직접 입력해보세요.</p>
         
@@ -678,36 +754,49 @@ export default function App() {
         </div>
 
         <div className="grid grid-cols-1 gap-3">
-          {filteredStocks.map((stock) => (
-            <motion.button
-              key={stock.id}
-              onClick={() => handleSelectStock(stock)}
-              className="flex items-center justify-between p-5 bg-white rounded-2xl border border-slate-100 shadow-sm hover:border-brand-primary transition-colors"
-              whileHover={{ scale: 1.01 }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-500 text-xs">
-                  {stock.symbol.slice(0, 2)}
+          {filteredStocks.map((stock) => {
+            const isSelected = selectedStock?.symbol === stock.symbol;
+            return (
+              <motion.button
+                key={stock.id}
+                onClick={() => setSelectedStock(stock)}
+                className={cn(
+                  "flex items-center justify-between p-5 rounded-2xl border transition-all text-left",
+                  isSelected 
+                    ? "bg-brand-primary/5 border-brand-primary shadow-sm ring-2 ring-brand-primary/20" 
+                    : "bg-white border-slate-100 shadow-sm hover:border-brand-primary/50"
+                )}
+                whileHover={{ scale: 1.01 }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={cn("w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs", isSelected ? "bg-brand-primary/20 text-brand-primary" : "bg-slate-100 text-slate-500 border border-slate-200")}>
+                    {stock.symbol.slice(0, 2)}
+                  </div>
+                  <div className={cn("font-bold", isSelected ? "text-brand-primary" : "")}>{stock.name}</div>
                 </div>
-                <div className="font-bold">{stock.name}</div>
-              </div>
-              <div className="text-slate-400 text-sm">{stock.symbol}</div>
-            </motion.button>
-          ))}
+                <div className={cn("text-sm", isSelected ? "text-brand-primary/70" : "text-slate-400")}>{stock.symbol}</div>
+              </motion.button>
+            );
+          })}
 
           {stockSearchQuery && !POPULAR_STOCKS.some(s => s.name === stockSearchQuery) && (
             <motion.button
-              onClick={() => handleSelectStock({ id: 'custom', name: stockSearchQuery, symbol: 'CUSTOM' })}
-              className="flex items-center justify-between p-5 bg-brand-primary/5 rounded-2xl border border-dashed border-brand-primary/30 text-brand-primary font-bold"
+              onClick={() => setSelectedStock({ id: 'custom', name: stockSearchQuery, symbol: 'CUSTOM' })}
+              className={cn(
+                "flex items-center justify-between p-5 rounded-2xl border transition-all text-left",
+                selectedStock?.symbol === 'CUSTOM' && selectedStock?.name === stockSearchQuery
+                  ? "bg-brand-primary/5 border-brand-primary shadow-sm ring-2 ring-brand-primary/20"
+                  : "bg-brand-primary/5 border-dashed border-brand-primary/30 text-brand-primary hover:border-brand-primary/60"
+              )}
               whileHover={{ scale: 1.01 }}
             >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-brand-primary/10 rounded-full flex items-center justify-center">
+              <div className="flex items-center gap-3 font-bold">
+                <div className="w-10 h-10 bg-brand-primary/10 rounded-full flex items-center justify-center text-brand-primary">
                   <Bird className="w-5 h-5" />
                 </div>
-                <div>"{stockSearchQuery}" 직접 입력</div>
+                <div className={selectedStock?.name === stockSearchQuery ? "text-brand-primary" : ""}>"{stockSearchQuery}" 직접 입력</div>
               </div>
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-5 h-5 text-brand-primary" />
             </motion.button>
           )}
         </div>
@@ -733,7 +822,7 @@ export default function App() {
     ];
 
     return (
-      <div className="px-6 py-8 pb-24">
+      <div className="px-6 py-8 pb-32">
         <div className={cn(
           "rounded-3xl p-8 text-center mb-6 overflow-hidden relative",
           isProfit ? "bg-profit/10" : "bg-loss/10"
@@ -746,12 +835,12 @@ export default function App() {
               {isProfit ? <TrendingUp className="w-10 h-10" /> : <TrendingDown className="w-10 h-10" />}
               <CountUp end={Math.abs(result.profitRate)} prefix={isProfit ? '+' : '-'} suffix="%" />
             </div>
-            <p className="text-slate-600 font-medium">
-              {result.period.label} {result.frequency}번 소비한 <span className="font-bold text-slate-900">{result.item.name}</span> 대신 <span className="font-bold text-slate-900">{result.stock.name}</span>을 샀다면?
+            <p className="text-slate-600 font-medium break-keep">
+              {result.period.label} {result.frequency}번 소비한 <br/>
+              <span className="font-bold text-slate-900">{result.item.name}</span> 대신 <span className="font-bold text-slate-900">{result.stock.name}</span>을 샀다면?
             </p>
           </div>
           
-          {/* Background decoration */}
           <div className={cn(
             "absolute -bottom-10 -right-10 w-40 h-40 rounded-full blur-3xl opacity-20",
             isProfit ? "bg-profit" : "bg-loss"
@@ -824,33 +913,23 @@ export default function App() {
           </button>
           <button 
             onClick={handleRestart}
-            className="col-span-2 bg-brand-primary/10 text-brand-primary py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-brand-primary/20 transition-colors"
+            className="col-span-2 bg-slate-100 text-slate-700 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-200 transition-colors"
           >
-            <RefreshCcw className="w-5 h-5" /> 다시 시뮬레이션
+            <RefreshCcw className="w-5 h-5" /> 처음부터 다시 시작
           </button>
         </div>
       </div>
     );
   };
 
+  const isNavStep = ['item', 'period', 'frequency', 'stock'].includes(currentStep);
+
   return (
     <div className="max-w-md mx-auto min-h-screen bg-[#F9FAFB] relative overflow-hidden">
-      {/* Local Top Area (Removed duplicate logo, kept Refresh Button) */}
-      {currentStep !== 'landing' && (
-        <div className="px-6 py-4 flex justify-end sticky top-0 z-50 bg-[#F9FAFB]/80 backdrop-blur-md">
-          <button 
-            onClick={handleRestart}
-            className="text-slate-400 hover:text-slate-600 transition-colors flex items-center gap-1 text-sm font-bold bg-white/50 px-3 py-1.5 rounded-full border border-slate-200"
-          >
-            <RefreshCcw className="w-4 h-4" /> 다시하기
-          </button>
-        </div>
-      )}
-
-      {/* Progress Bar */}
-      {['item', 'period', 'frequency', 'stock'].includes(currentStep) && (
-        <div className="px-6 mb-4">
-          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+      {/* Progress Bar (Hidden on landing and result) */}
+      {isNavStep && (
+        <div className="px-6 pt-6 mb-4 sticky top-0 z-50 bg-[#F9FAFB]/90 backdrop-blur-md">
+          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mb-2">
             <motion.div 
               className="h-full bg-brand-primary"
               initial={{ width: 0 }}
@@ -881,8 +960,38 @@ export default function App() {
         </AnimatePresence>
       </main>
 
+      {/* Bottom Navigation Fixed Bar */}
+      {isNavStep && (
+        <motion.div 
+          initial={{ y: 100 }}
+          animate={{ y: 0 }}
+          className="fixed bottom-0 left-0 right-0 p-4 pb-8 bg-white/90 backdrop-blur-md border-t border-slate-100 flex justify-between z-50 max-w-md mx-auto"
+        >
+          <button 
+            onClick={handlePrev} 
+            className="px-6 py-4 font-bold text-slate-500 bg-slate-100 rounded-2xl hover:bg-slate-200 flex items-center justify-center w-1/3 transition-colors"
+          >
+            이전
+          </button>
+          
+          <button 
+            onClick={handleNext} 
+            disabled={!checkCanGoNext()}
+            className={cn(
+              "font-bold text-white rounded-2xl flex items-center justify-center gap-2 w-7/12 transition-all",
+              checkCanGoNext() 
+                ? "bg-brand-primary shadow-lg shadow-brand-primary/30 hover:bg-brand-primary/90" 
+                : "bg-slate-300 opacity-50 cursor-not-allowed"
+            )}
+          >
+            {currentStep === 'stock' ? '결과 확인하기' : '다음'}
+            {currentStep !== 'stock' && <ArrowRight className="w-5 h-5" />}
+          </button>
+        </motion.div>
+      )}
+
       {/* Footer Decoration */}
-      <div className="fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#F9FAFB] to-transparent pointer-events-none z-0" />
+      <div className="fixed bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-[#F9FAFB] to-transparent pointer-events-none z-0 mix-blend-multiply opacity-50" />
     </div>
   );
 }
