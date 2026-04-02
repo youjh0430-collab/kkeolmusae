@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import yahooFinance from 'yahoo-finance2'
 import { supabaseAdmin } from '@/lib/supabase'
 import type { SimulationInput } from '@/types/index'
@@ -7,6 +8,18 @@ interface Quote {
   close: number | null
   open: number | null
 }
+
+const getCachedChart = unstable_cache(
+  async (ticker: string, start: string, end: string) => {
+    return await yahooFinance.chart(ticker, {
+      period1: start,
+      period2: end,
+      interval: '1d',
+    })
+  },
+  ['yahoo-finance-chart-cache'],
+  { revalidate: 3600 * 24 } // 24시간마다 갱신 (하루 종가는 한 번만 가져옴)
+)
 
 export async function POST(request: Request) {
   let body: SimulationInput
@@ -28,16 +41,16 @@ export async function POST(request: Request) {
     const endDate = new Date(periodEnd)
     const days = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)))
 
-    // yahoo-finance2로 주가 히스토리 조회
+    // yahoo-finance2로 주가 히스토리 조회 (캐시 적용)
     const queryEndDate = new Date(periodEnd)
     queryEndDate.setDate(queryEndDate.getDate() + 1) // 종료일 포함을 위해 +1일
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result: any = await yahooFinance.chart(stockTicker, {
-      period1: periodStart,
-      period2: queryEndDate.toISOString().split('T')[0],
-      interval: '1d',
-    })
+    const result: any = await getCachedChart(
+      stockTicker,
+      periodStart,
+      queryEndDate.toISOString().split('T')[0]
+    )
 
     const quotes: Quote[] = (result.quotes as Quote[]).filter(
       (q: Quote) => q.close != null && q.open != null
@@ -103,8 +116,8 @@ export async function POST(request: Request) {
       profitAmount: Math.round(profitAmount),
       history,
     })
-  } catch (err) {
+  } catch (err: any) {
     console.error('시뮬레이션 오류:', err)
-    return Response.json({ error: '주가 데이터를 가져오지 못했습니다. 티커를 확인해주세요.' }, { status: 500 })
+    return Response.json({ error: '주가 데이터를 가져오지 못했습니다. 티커를 확인해주세요. 세부 오류: ' + (err.message || String(err)) }, { status: 500 })
   }
 }

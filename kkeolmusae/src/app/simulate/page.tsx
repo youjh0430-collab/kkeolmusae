@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ParrotMascot from "@/components/ParrotMascot";
 import { ChevronRight, ChevronLeft, Edit3, DollarSign, Calendar, TrendingUp, Loader2 } from "lucide-react";
+import LoginModal from "@/components/LoginModal";
+import { supabaseClient } from "@/lib/supabase";
 
 const POPULAR_ITEMS = [
   { name: "아메리카노", price: 4500, emoji: "☕" },
@@ -45,6 +47,16 @@ export default function SimulateWizard() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      setUserId(session?.user?.id || null);
+    };
+    getUser();
+  }, []);
 
   // Step 1: 소비 항목
   const [selectedItem, setSelectedItem] = useState<{ name: string; price: number } | null>(null);
@@ -97,6 +109,14 @@ export default function SimulateWizard() {
   };
 
   const submit = async () => {
+    if (!userId) {
+      const hasSimulated = localStorage.getItem("kkeolmusae_simulated");
+      if (hasSimulated) {
+        setShowLoginModal(true);
+        return;
+      }
+    }
+
     setLoading(true);
     setError("");
 
@@ -119,6 +139,7 @@ export default function SimulateWizard() {
           periodEnd: end,
           stockTicker,
           stockName,
+          userId,
         }),
       });
 
@@ -128,6 +149,10 @@ export default function SimulateWizard() {
         setError(data.error ?? "시뮬레이션에 실패했습니다.");
         setLoading(false);
         return;
+      }
+
+      if (!userId) {
+        localStorage.setItem("kkeolmusae_simulated", "true");
       }
 
       router.push(`/result/${data.id}`);
@@ -145,6 +170,7 @@ export default function SimulateWizard() {
 
   return (
     <div className="flex-1 flex flex-col bg-gray-50 h-full py-8 md:py-16">
+      {showLoginModal && <LoginModal onClose={() => setShowLoginModal(false)} />}
       <div className="w-full max-w-3xl mx-auto flex-1 flex flex-col bg-white md:rounded-3xl md:shadow-2xl md:border border-gray-100 overflow-hidden relative">
 
         {/* 앵무새 헤더 */}
@@ -184,7 +210,7 @@ export default function SimulateWizard() {
                   <button
                     key={item.name}
                     onClick={() => { setSelectedItem(item); setCustomItem(false); }}
-                    className={`w-full p-4 rounded-2xl border-2 text-center transition-all ${!customItem && selectedItem?.name === item.name ? "border-primary bg-orange-50 shadow-md scale-[1.02]" : "border-gray-200 hover:border-orange-200 bg-white"}`}
+                    className={`w-full p-4 rounded-2xl border-2 text-center transition-all ${!customItem && selectedItem?.name === item.name ? "border-primary bg-emerald-50 shadow-md scale-[1.02]" : "border-gray-200 hover:border-emerald-200 bg-white"}`}
                   >
                     <div className="text-2xl mb-1">{item.emoji}</div>
                     <div className="font-bold text-sm md:text-base">{item.name}</div>
@@ -194,7 +220,7 @@ export default function SimulateWizard() {
               </div>
               <button
                 onClick={() => { setCustomItem(true); setSelectedItem(null); }}
-                className={`w-full p-4 rounded-2xl border-2 flex items-center justify-center space-x-3 transition-all ${customItem ? "border-primary bg-orange-50 shadow-md scale-[1.02]" : "border-gray-200 hover:border-orange-200 bg-white"}`}
+                className={`w-full p-4 rounded-2xl border-2 flex items-center justify-center space-x-3 transition-all ${customItem ? "border-primary bg-emerald-50 shadow-md scale-[1.02]" : "border-gray-200 hover:border-emerald-200 bg-white"}`}
               >
                 <Edit3 className="w-5 h-5 text-gray-500" />
                 <span className="font-bold text-base text-gray-600">직접 입력하기</span>
@@ -230,7 +256,7 @@ export default function SimulateWizard() {
                   <button
                     key={preset.label}
                     onClick={() => { setSelectedPreset(i); setCustomPeriod(false); }}
-                    className={`w-full p-5 rounded-2xl border-2 text-center transition-all ${!customPeriod && selectedPreset === i ? "border-primary bg-orange-50 shadow-md scale-[1.02]" : "border-gray-200 hover:border-orange-200 bg-white"}`}
+                    className={`w-full p-5 rounded-2xl border-2 text-center transition-all ${!customPeriod && selectedPreset === i ? "border-primary bg-emerald-50 shadow-md scale-[1.02]" : "border-gray-200 hover:border-emerald-200 bg-white"}`}
                   >
                     <div className="font-bold text-base md:text-lg">{preset.label}</div>
                   </button>
@@ -238,7 +264,7 @@ export default function SimulateWizard() {
               </div>
               <button
                 onClick={() => { setCustomPeriod(true); setSelectedPreset(null); }}
-                className={`w-full p-4 rounded-2xl border-2 flex items-center justify-center space-x-3 transition-all ${customPeriod ? "border-primary bg-orange-50 shadow-md scale-[1.02]" : "border-gray-200 hover:border-orange-200 bg-white"}`}
+                className={`w-full p-4 rounded-2xl border-2 flex items-center justify-center space-x-3 transition-all ${customPeriod ? "border-primary bg-emerald-50 shadow-md scale-[1.02]" : "border-gray-200 hover:border-emerald-200 bg-white"}`}
               >
                 <Calendar className="w-5 h-5 text-gray-500" />
                 <span className="font-bold text-base text-gray-600">직접 날짜 설정</span>
@@ -261,7 +287,7 @@ export default function SimulateWizard() {
                   <button
                     key={stock.ticker}
                     onClick={() => { setSelectedStock(stock); setCustomStock(false); }}
-                    className={`w-full p-4 rounded-2xl border-2 text-center transition-all ${!customStock && selectedStock?.ticker === stock.ticker ? "border-primary bg-orange-50 shadow-md scale-[1.02]" : "border-gray-200 hover:border-orange-200 bg-white"}`}
+                    className={`w-full p-4 rounded-2xl border-2 text-center transition-all ${!customStock && selectedStock?.ticker === stock.ticker ? "border-primary bg-emerald-50 shadow-md scale-[1.02]" : "border-gray-200 hover:border-emerald-200 bg-white"}`}
                   >
                     <div className="font-bold text-sm md:text-base">{stock.name}</div>
                     <div className="text-gray-400 text-xs mt-1">{stock.ticker}</div>
@@ -270,7 +296,7 @@ export default function SimulateWizard() {
               </div>
               <button
                 onClick={() => { setCustomStock(true); setSelectedStock(null); }}
-                className={`w-full p-4 rounded-2xl border-2 flex items-center justify-center space-x-3 transition-all ${customStock ? "border-primary bg-orange-50 shadow-md scale-[1.02]" : "border-gray-200 hover:border-orange-200 bg-white"}`}
+                className={`w-full p-4 rounded-2xl border-2 flex items-center justify-center space-x-3 transition-all ${customStock ? "border-primary bg-emerald-50 shadow-md scale-[1.02]" : "border-gray-200 hover:border-emerald-200 bg-white"}`}
               >
                 <Edit3 className="w-5 h-5 text-gray-500" />
                 <span className="font-bold text-base text-gray-600">직접 종목명/티커 입력</span>

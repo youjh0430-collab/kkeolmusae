@@ -9,9 +9,9 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter);
-  --color-primary: #ff6b35;
-  --color-primary-hover: #e85a26;
-  --color-primary-light: #ffaa88;
+  --color-primary: #10b981;
+  --color-primary-hover: #059669;
+  --color-primary-light: #6ee7b7;
 }
 
 @media (prefers-color-scheme: dark) {

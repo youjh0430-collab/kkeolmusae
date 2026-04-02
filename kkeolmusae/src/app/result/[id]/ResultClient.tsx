@@ -1,15 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
 import { Share2, RefreshCw, Volume2 } from "lucide-react";
 import ParrotMascot from "@/components/ParrotMascot";
-
-const ResponsiveContainer = dynamic(() => import("recharts").then((m) => m.ResponsiveContainer), { ssr: false });
-const LineChart = dynamic(() => import("recharts").then((m) => m.LineChart), { ssr: false });
-const Line = dynamic(() => import("recharts").then((m) => m.Line), { ssr: false });
-const XAxis = dynamic(() => import("recharts").then((m) => m.XAxis), { ssr: false });
-const Tooltip = dynamic(() => import("recharts").then((m) => m.Tooltip), { ssr: false });
+import ResultChart from "@/components/ResultChart";
 
 interface Simulation {
   id: string;
@@ -61,7 +55,21 @@ export default function ResultClient({ simulation: sim }: Props) {
     if (!("speechSynthesis" in window)) return;
     const utterance = new SpeechSynthesisUtterance(comment);
     utterance.lang = "ko-KR";
-    utterance.rate = 0.9;
+    
+    // 앵무새 느낌으로 피치(음높이)와 속도 조절
+    utterance.pitch = 1.6;
+    utterance.rate = 1.1;
+    
+    const voices = window.speechSynthesis.getVoices();
+    const krVoices = voices.filter(v => v.lang.includes('ko') || v.lang.includes('KR'));
+    const preferredVoice = krVoices.find(v => v.name.includes('Yuna') || v.name.includes('Sora') || v.name.includes('Google'));
+    
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    } else if (krVoices.length > 0) {
+      utterance.voice = krVoices[0];
+    }
+    
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utterance);
   }
@@ -102,7 +110,7 @@ export default function ResultClient({ simulation: sim }: Props) {
       {/* 앵무새 코멘트 */}
       <div className="flex items-start space-x-4 animate-in fade-in slide-in-from-bottom-4 delay-100">
         <ParrotMascot emotion={emotion} className="flex-shrink-0" />
-        <div className="bg-white p-4 rounded-2xl rounded-tl-sm shadow-sm border border-orange-100 relative flex-1">
+        <div className="bg-white p-4 rounded-2xl rounded-tl-sm shadow-sm border border-emerald-100 relative flex-1">
           <p className="text-gray-800 font-medium leading-snug">{comment}</p>
           <button
             onClick={speakComment}
@@ -115,32 +123,7 @@ export default function ResultClient({ simulation: sim }: Props) {
       </div>
 
       {/* 차트 */}
-      <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100 animate-in fade-in slide-in-from-bottom-4 delay-200">
-        <h3 className="font-bold text-gray-800 mb-4 flex items-center justify-between">
-          <span>주가 변동</span>
-          <span className="text-xs text-gray-400 font-normal">{sim.stock_ticker}</span>
-        </h3>
-        <div className="h-48 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
-              <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} tickMargin={10} stroke="#9ca3af" />
-              <Tooltip
-                contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)" }}
-                itemStyle={{ color: "#ff6b35", fontWeight: "bold" }}
-                formatter={(v: unknown) => [`${(v as number).toLocaleString()}원`, "주가"]}
-              />
-              <Line
-                type="monotone"
-                dataKey="price"
-                stroke={isProfit ? "#16a34a" : "#ef4444"}
-                strokeWidth={3}
-                dot={{ r: 4, fill: isProfit ? "#16a34a" : "#ef4444", strokeWidth: 2, stroke: "#fff" }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      <ResultChart ticker={sim.stock_ticker} isProfit={isProfit} data={chartData} />
 
       {/* 하단 플로팅 액션 */}
       <div className="fixed bottom-0 left-0 right-0 max-w-3xl mx-auto p-6 bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent">
