@@ -6,6 +6,7 @@ export interface SimulationInput {
   stockTicker: string     // 예: '005930.KS', 'AAPL'
   stockName: string
   userId?: string         // 로그인 유저 UUID (선택)
+  frequency?: number      // 빈도수 (선택)
 }
 
 export interface SimulationResult {

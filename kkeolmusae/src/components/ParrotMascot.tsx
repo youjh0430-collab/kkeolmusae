@@ -1,51 +1,63 @@
-import Image from "next/image";
+"use client";
+
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 type MascotVariant = 'full' | 'face' | 'avatar';
 
 export default function ParrotMascot({ 
   className = "", 
   emotion = 'default',
-  variant = 'avatar' // 기본값을 깔끔한 원형 프레임으로 변경하여 사각형 테두리를 없앱니다.
+  variant = 'avatar'
 }: { 
   className?: string, 
   emotion?: 'default' | 'sad' | 'excited' | 'mocking',
   variant?: MascotVariant
 }) {
-
-  let containerStyle = "";
-  let imageStyle = "";
   
-  // 상황에 따른 마스코트 렌더링 방식 분기
-  switch (variant) {
-    case 'face':
-      // 1. 얼굴만 초근접 줌인 (결과 페이지 코멘트용 등)
-      containerStyle = "w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-primary shadow-lg bg-white";
-      imageStyle = "object-cover scale-[2.0] origin-[50%_25%]"; 
-      break;
-    case 'avatar':
-      // 2. 아바타 모드: 사각형이 안 보이게 둥근 프레임 안으로 마스킹 (메인 화면용)
-      containerStyle = "w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-emerald-50 shadow-md bg-white hover:border-primary transition-colors";
-      imageStyle = "object-cover scale-[1.1] origin-[50%_35%]";
-      break;
-    case 'full':
-    default:
-      // 3. 전신 모드 (배경이 투명할 때 사용)
-      containerStyle = "w-32 h-32 md:w-48 md:h-48 drop-shadow-xl";
-      imageStyle = "object-contain mix-blend-multiply";
-      break;
-  }
+  // Mapping existing emotions to the new SVG states
+  let state: 'idle' | 'happy' | 'sad' | 'thinking' = 'idle';
+  if (emotion === 'sad') state = 'sad';
+  if (emotion === 'excited' || emotion === 'mocking') state = 'happy';
 
   return (
-    <div className={`relative flex items-center justify-center ${className} transition-transform hover:scale-105 hover:-rotate-3 duration-300 cursor-pointer`}>
-      <div className={`relative flex items-center justify-center ${containerStyle}`}>
-        <Image
-          src="/mascot-smug-3d.png"
-          alt={`껄무새 (${emotion})`}
-          fill
-          className={`${imageStyle} transition-all duration-300 hover:scale-125`}
-          priority
-        />
+    <motion.div 
+      className={cn("relative mx-auto", className, variant === 'avatar' ? 'w-32 h-32' : 'w-48 h-48')}
+      animate={state === 'thinking' ? { y: [-5, 5, -5] } : { y: [0, -10, 0] }}
+      transition={{ duration: state === 'thinking' ? 1 : 3, repeat: Infinity, ease: "easeInOut" }}
+    >
+      <div className="absolute inset-0 bg-brand-primary/10 rounded-full blur-2xl" />
+      <div className="relative z-10 w-full h-full flex items-center justify-center">
+        <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-lg scale-110">
+          <motion.circle 
+            cx="50" cy="50" r="45" 
+            fill="#FF6B35" 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+          />
+          <circle cx="35" cy="40" r="5" fill="white" />
+          <circle cx="65" cy="40" r="5" fill="white" />
+          <motion.circle 
+            cx="35" cy="40" r="2.5" fill="black" 
+            animate={state === 'happy' ? { scale: [1, 1.5, 1] } : {}}
+          />
+          <motion.circle 
+            cx="65" cy="40" r="2.5" fill="black" 
+            animate={state === 'happy' ? { scale: [1, 1.5, 1] } : {}}
+          />
+          <path d="M45 55 L55 55 L50 75 Z" fill="#FFB347" />
+          {state === 'sad' && (
+            <path d="M35 30 Q50 20 65 30" stroke="white" strokeWidth="2" fill="none" />
+          )}
+          {state === 'thinking' && (
+            <motion.circle 
+              cx="80" cy="20" r="10" fill="white" opacity="0.8"
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ repeat: Infinity }}
+            />
+          )}
+        </svg>
       </div>
-    </div>
+    </motion.div>
   );
 }

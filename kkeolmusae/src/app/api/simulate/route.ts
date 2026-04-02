@@ -1,25 +1,15 @@
-import { unstable_cache } from 'next/cache'
-import yahooFinance from 'yahoo-finance2'
+import YahooFinance from 'yahoo-finance2'
 import { supabaseAdmin } from '@/lib/supabase'
 import type { SimulationInput } from '@/types/index'
+
+// yahoo-finance2 v3: 인스턴스 생성 필수
+const yf = new YahooFinance()
 
 interface Quote {
   date: Date
   close: number | null
   open: number | null
 }
-
-const getCachedChart = unstable_cache(
-  async (ticker: string, start: string, end: string) => {
-    return await yahooFinance.chart(ticker, {
-      period1: start,
-      period2: end,
-      interval: '1d',
-    })
-  },
-  ['yahoo-finance-chart-cache'],
-  { revalidate: 3600 * 24 } // 24시간마다 갱신 (하루 종가는 한 번만 가져옴)
-)
 
 export async function POST(request: Request) {
   let body: SimulationInput
@@ -29,7 +19,7 @@ export async function POST(request: Request) {
     return Response.json({ error: '잘못된 요청입니다.' }, { status: 400 })
   }
 
-  const { itemName, itemPrice, periodStart, periodEnd, stockTicker, stockName, userId } = body
+  const { itemName, itemPrice, periodStart, periodEnd, stockTicker, stockName, userId, frequency } = body
 
   if (!itemName || !itemPrice || !periodStart || !periodEnd || !stockTicker || !stockName) {
     return Response.json({ error: '필수 항목이 누락되었습니다.' }, { status: 400 })
@@ -46,11 +36,11 @@ export async function POST(request: Request) {
     queryEndDate.setDate(queryEndDate.getDate() + 1) // 종료일 포함을 위해 +1일
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result: any = await getCachedChart(
-      stockTicker,
-      periodStart,
-      queryEndDate.toISOString().split('T')[0]
-    )
+    const result: any = await yf.chart(stockTicker, {
+      period1: periodStart,
+      period2: queryEndDate.toISOString().split('T')[0],
+      interval: '1d',
+    })
 
     const quotes: Quote[] = (result.quotes as Quote[]).filter(
       (q: Quote) => q.close != null && q.open != null
@@ -64,7 +54,9 @@ export async function POST(request: Request) {
     const currentPrice = quotes[quotes.length - 1].close as number
 
     const returnRate = ((currentPrice - buyPrice) / buyPrice) * 100
-    const investmentAmount = itemPrice * days
+    // 빈도수(frequency)가 넘어오면 횟수 기반으로, 없으면 단순 기간(days) 기반으로 계산
+    const times = frequency && typeof frequency === 'number' && frequency > 0 ? Number(frequency) : days;
+    const investmentAmount = itemPrice * times
     const profitAmount = investmentAmount * (returnRate / 100)
 
     // 차트용 히스토리 (최대 60개 포인트로 샘플링)
