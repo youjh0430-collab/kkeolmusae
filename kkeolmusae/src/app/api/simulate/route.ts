@@ -52,6 +52,8 @@ export async function POST(request: Request) {
 
     const buyPrice = quotes[0].close as number
     const currentPrice = quotes[quotes.length - 1].close as number
+    // 통화 정보 — 해외 주식은 USD, 국내 주식은 KRW
+    const currency: string = result.meta?.currency || (stockTicker.endsWith('.KS') || stockTicker.endsWith('.KQ') ? 'KRW' : 'USD')
 
     const returnRate = ((currentPrice - buyPrice) / buyPrice) * 100
     // 빈도수(frequency)가 넘어오면 횟수 기반으로, 없으면 단순 기간(days) 기반으로 계산
@@ -103,6 +105,7 @@ export async function POST(request: Request) {
       stockName,
       buyPrice,
       currentPrice,
+      currency,
       returnRate: Math.round(returnRate * 100) / 100,
       investmentAmount,
       profitAmount: Math.round(profitAmount),
