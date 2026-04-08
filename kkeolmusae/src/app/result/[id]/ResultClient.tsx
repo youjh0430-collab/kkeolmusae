@@ -71,10 +71,11 @@ const CountUp = ({ end, prefix = '', suffix = '' }: { end: number, prefix?: stri
 };
 
 function getParrotComment(returnRate: number): { text: string; emotion: "excited" | "mocking" | "sad" | "default" } {
-  if (returnRate >= 50) return { text: `살껄~~ 살껄~~ 왜 안 샀어!! 무려 ${returnRate.toFixed(1)}%라고!! 🦜`, emotion: "excited" };
-  if (returnRate >= 10) return { text: `쏠쏠했을텐데~ ${returnRate.toFixed(1)}% 수익이라니, 아깝다 아깝다~`, emotion: "mocking" };
+  if (returnRate >= 50) return { text: `살껄~~ 살껄~~ 왜 안 샀어!! 무려 ${returnRate.toFixed(1)}%라고!!`, emotion: "excited" };
+  if (returnRate === 0) return { text: `본전치기~ 안 사길 잘했을지도?`, emotion: "default" };
+  if (returnRate >= 10) return { text: `거봐, 오를 거라 했잖아~ 아쉽지? ${returnRate.toFixed(1)}% 상승!`, emotion: "mocking" };
   if (returnRate >= -10) return { text: `뭐... 그냥 그랬을 수도 있어~ ${returnRate.toFixed(1)}% 😅`, emotion: "default" };
-  return { text: `오히려 다행이야~ 안 샀길 잘했어~ ${returnRate.toFixed(1)}% 🎉`, emotion: "sad" };
+  return { text: `와우... 이거 샀으면 한강 갈 뻔... 다행이다 휴~ ${returnRate.toFixed(1)}% 폭락!!`, emotion: "sad" };
 }
 
 function formatDateLabel(dateStr: string): string {
@@ -181,7 +182,7 @@ export default function ResultClient({ simulation: sim }: Props) {
                 <Tooltip 
                   cursor={{stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '3 3'}}
                   contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                  formatter={(value: number) => [`${Math.round(value).toLocaleString()}원`, '평가금액']}
+                  formatter={(value: any) => [`${Math.round(Number(value)).toLocaleString()}원`, '평가금액']}
                   labelFormatter={(name, payload) => {
                     if (payload && payload.length > 0) {
                       const data = payload[0].payload;
@@ -231,7 +232,7 @@ export default function ResultClient({ simulation: sim }: Props) {
           </button>
           <button 
             onClick={() => router.push('/simulate')}
-            className="col-span-2 bg-brand-primary text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-brand-primary/90 transition-colors shadow-lg shadow-brand-primary/30"
+            className="col-span-2 bg-slate-900 text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/30"
           >
             <RefreshCcw className="w-5 h-5" /> 다시 시뮬레이션
           </button>

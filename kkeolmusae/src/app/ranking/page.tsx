@@ -59,7 +59,7 @@ export default async function RankingPage() {
           <ParrotMascot className="flex-shrink-0" />
           <div className="bg-white p-4 rounded-2xl rounded-tl-sm shadow-sm border border-emerald-100">
             <p className="text-gray-800 font-medium text-sm">
-              사람들이 가장 후회한 종목들이야~ 살껄~~ 🦜
+              사람들이 가장 후회한 종목들이야~ 살껄~~
             </p>
           </div>
         </div>

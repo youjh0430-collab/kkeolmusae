@@ -310,7 +310,7 @@ export default function SimulateWizard() {
       
       <motion.button
         onClick={handleStart}
-        className="w-full max-w-xs bg-brand-primary text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-brand-primary/30 flex items-center justify-center gap-2 transition-all hover:bg-brand-primary/90"
+        className="w-full max-w-xs bg-slate-900 text-white py-4 rounded-2xl font-bold text-lg shadow-lg shadow-slate-900/30 flex items-center justify-center gap-2 transition-all hover:bg-slate-800"
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >

@@ -8,6 +8,8 @@ import { supabaseClient } from "@/lib/supabase";
 import type { User } from "@supabase/supabase-js";
 import LoginModal from "@/components/LoginModal";
 
+import ParrotMascot from "@/components/ParrotMascot";
+
 export default function Navbar() {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
@@ -42,8 +44,9 @@ export default function Navbar() {
     <>
       {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
       <nav className="bg-white border-b border-gray-100 px-6 py-3 flex items-center justify-between sticky top-0 z-40">
-        <Link href="/" className="font-extrabold text-xl text-primary tracking-tight">
-          🦜 껄무새
+        <Link href="/" className="font-extrabold text-xl text-primary tracking-tight flex items-center gap-2">
+          <ParrotMascot variant="icon" />
+          껄무새
         </Link>
 
         {/* 데스크톱 메뉴 */}
