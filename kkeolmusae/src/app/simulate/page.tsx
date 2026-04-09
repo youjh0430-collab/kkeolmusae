@@ -146,11 +146,11 @@ export default function SimulateWizard() {
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { session } } = await supabaseClient.auth.getSession();
+    // 세션 변경 감시 — 로그인하면 userId 자동 업데이트
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, session) => {
       setUserId(session?.user?.id || null);
-    };
-    getUser();
+    });
+    return () => subscription?.unsubscribe();
   }, []);
 
   const [currentStep, setCurrentStep] = useState<Step>('landing');
