@@ -26,34 +26,30 @@ export async function POST(request: Request) {
   }
 
   try {
-    // 기간 내 일수 계산 (단순 일수 기반)
+    // 기간 내 일수 계산
     const startDate = new Date(periodStart)
     const endDate = new Date(periodEnd)
     const days = Math.max(1, Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)))
 
-    // yahoo-finance2로 주가 히스토리 조회 (캐시 적용)
-    const queryEndDate = new Date(periodEnd)
-    queryEndDate.setDate(queryEndDate.getDate() + 1) // 종료일 포함을 위해 +1일
-
+    // yahoo-finance2 v3: historical() 메서드 사용
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result: any = await yf.chart(stockTicker, {
-      period1: periodStart,
-      period2: queryEndDate.toISOString().split('T')[0],
+    const quotes: any[] = await yf.historical(stockTicker, {
+      period1: new Date(periodStart),
+      period2: new Date(endDate.getTime() + 24 * 60 * 60 * 1000), // 종료일 포함
       interval: '1d',
     })
 
-    const quotes: Quote[] = (result.quotes as Quote[]).filter(
-      (q: Quote) => q.close != null && q.open != null
-    )
-
-    if (quotes.length < 2) {
-      return Response.json({ error: '해당 기간의 주가 데이터가 부족합니다.' }, { status: 422 })
+    if (!quotes || quotes.length < 2) {
+      return Response.json({ 
+        error: `해당 기간의 주가 데이터가 부족합니다. (${quotes?.length || 0}개 데이터 찾음)` 
+      }, { status: 422 })
     }
 
     const buyPrice = quotes[0].close as number
     const currentPrice = quotes[quotes.length - 1].close as number
-    // 통화 정보 — 해외 주식은 USD, 국내 주식은 KRW
-    const currency: string = result.meta?.currency || (stockTicker.endsWith('.KS') || stockTicker.endsWith('.KQ') ? 'KRW' : 'USD')
+    
+    // 통화 정보
+    const currency: string = stockTicker.endsWith('.KS') || stockTicker.endsWith('.KQ') ? 'KRW' : 'USD'
 
     const returnRate = ((currentPrice - buyPrice) / buyPrice) * 100
     // 빈도수(frequency)가 넘어오면 횟수 기반으로, 없으면 단순 기간(days) 기반으로 계산
@@ -64,8 +60,8 @@ export async function POST(request: Request) {
     // 차트용 히스토리 (최대 60개 포인트로 샘플링)
     const step = Math.max(1, Math.floor(quotes.length / 60))
     const history = quotes
-      .filter((_: Quote, i: number) => i % step === 0 || i === quotes.length - 1)
-      .map((q: Quote) => ({
+      .filter((_: any, i: number) => i % step === 0 || i === quotes.length - 1)
+      .map((q: any) => ({
         date: new Date(q.date).toISOString().split('T')[0],
         close: q.close as number,
       }))
@@ -113,6 +109,8 @@ export async function POST(request: Request) {
     })
   } catch (err: any) {
     console.error('시뮬레이션 오류:', err)
-    return Response.json({ error: '주가 데이터를 가져오지 못했습니다. 티커를 확인해주세요. 세부 오류: ' + (err.message || String(err)) }, { status: 500 })
+    return Response.json({ 
+      error: '주가 데이터를 가져오지 못했습니다. 티커를 확인해주세요. 세부 오류: ' + (err.message || String(err)) 
+    }, { status: 500 })
   }
 }
