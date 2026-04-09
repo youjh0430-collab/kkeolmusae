@@ -15,8 +15,8 @@ export default function HistoryClient() {
   const [showLogin, setShowLogin] = useState(false);
 
   useEffect(() => {
-    const load = async () => {
-      const { data: { session } } = await supabaseClient.auth.getSession();
+    // 세션 변경 감시 — 로그인/로그아웃 시 자동 감지
+    const { data: { subscription } } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
       const uid = session?.user?.id ?? null;
       setUserId(uid);
 
@@ -27,10 +27,13 @@ export default function HistoryClient() {
           .eq("user_id", uid)
           .order("created_at", { ascending: false });
         setHistory((data as SimulationResult[]) ?? []);
+      } else {
+        setHistory([]);
       }
       setLoading(false);
-    };
-    load();
+    });
+
+    return () => subscription?.unsubscribe();
   }, []);
 
   return (
